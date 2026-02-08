@@ -1,0 +1,147 @@
+﻿@inject IConfiguration Configuration
+@model AceJobAgency.ViewModels.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Login";
+    ViewData["HideNavbar"] = true;
+}
+
+<div class="apple-form-container">
+    <h1>Create your account</h1>
+    <p class="subtitle">
+        One Ace Job Agency account gives you access to all services.
+    </p>
+
+    <form asp-action="Register" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+
+
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="row">
+            <div class="col-6 apple-form-group">
+                <label asp-for="LastName"></label>
+                <input asp-for="LastName" class="form-control apple-input" />
+                <span asp-validation-for="LastName" class="text-danger"></span>
+            </div>
+
+            <div class="col-6 apple-form-group">
+                <label asp-for="FirstName"></label>
+                <input asp-for="FirstName" class="form-control apple-input" />
+                <span asp-validation-for="FirstName" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="apple-form-group">
+            <label asp-for="Gender"></label>
+            <select asp-for="Gender" class="form-select apple-select">
+                <option value="">Select gender</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+            </select>
+            <span asp-validation-for="Gender" class="text-danger"></span>
+        </div>
+
+        <div class="apple-form-group">
+            <label asp-for="DateOfBirth"></label>
+            <input asp-for="DateOfBirth" type="date" class="form-control apple-input" />
+            <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+        </div>
+
+        <div class="apple-form-group">
+            <label asp-for="Email"></label>
+            <input asp-for="Email" class="form-control apple-input" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="apple-form-group">
+            <label asp-for="NRIC"></label>
+            <input asp-for="NRIC" class="form-control apple-input" />
+            <span asp-validation-for="NRIC" class="text-danger"></span>
+        </div>
+
+        <div class="apple-form-group">
+            <label asp-for="Password"></label>
+            <input asp-for="Password" type="password" class="form-control apple-input" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+
+            <div class="password-rules" id="passwordRules">
+                <p>Password must contain:</p>
+                <ul>
+                    <li id="rule-length">At least 12 characters</li>
+                    <li id="rule-upper">One uppercase letter</li>
+                    <li id="rule-lower">One lowercase letter</li>
+                    <li id="rule-number">One number</li>
+                    <li id="rule-special">One special character</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="apple-form-group">
+            <label asp-for="ConfirmPassword"></label>
+            <input asp-for="ConfirmPassword" type="password" class="form-control apple-input" />
+            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+        </div>
+
+        <div class="apple-form-group">
+            <label asp-for="Resume">Resume (.pdf / .docx)</label>
+            <input asp-for="Resume" type="file" class="form-control apple-input" />
+            <span asp-validation-for="Resume" class="text-danger"></span>
+        </div>
+
+        <div class="apple-form-group">
+            <label asp-for="WhoAmI"></label>
+            <textarea asp-for="WhoAmI" class="form-control apple-textarea" rows="3"></textarea>
+            <span asp-validation-for="WhoAmI" class="text-danger"></span>
+        </div>
+
+        
+        <input type="hidden" id="RecaptchaToken" name="RecaptchaToken" />
+
+        <button type="submit" class="btn apple-button w-100 mt-3">
+            Create Account
+        </button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <!-- reCAPTCHA v3 -->
+    <script src="https://www.google.com/recaptcha/api.js?render=@Configuration["GoogleReCaptcha:SiteKey"]"></script>
+
+    <script>
+        grecaptcha.ready(function () {
+            grecaptcha.execute('@Configuration["GoogleReCaptcha:SiteKey"]', { action: 'register' })
+                .then(function (token) {
+                    const recaptchaInput = document.getElementById('RecaptchaToken');
+                    if (recaptchaInput) {
+                        recaptchaInput.value = token;
+                    }
+                });
+        });
+
+        // password rules
+        const passwordInput = document.getElementById("Password");
+
+        if (passwordInput) {
+            passwordInput.addEventListener("input", function () {
+                const value = passwordInput.value;
+
+                toggle("rule-length", value.length >= 12);
+                toggle("rule-upper", /[A-Z]/.test(value));
+                toggle("rule-lower", /[a-z]/.test(value));
+                toggle("rule-number", /\d/.test(value));
+                toggle("rule-special", /[^a-zA-Z0-9]/.test(value));
+            });
+        }
+
+        function toggle(id, isValid) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.color = isValid ? "green" : "red";
+        }
+    </script>
+}

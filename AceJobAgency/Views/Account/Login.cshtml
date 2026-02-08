@@ -1,0 +1,54 @@
+﻿@model AceJobAgency.ViewModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Login";
+    ViewData["HideNavbar"] = true;
+}
+
+<div class="auth-page">
+    <div class="apple-form-container">
+        <h1>Sign in</h1>
+        <p class="subtitle">Use your Ace Job Agency account</p>
+
+        <form asp-action="Login" method="post">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="apple-form-group">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" class="form-control apple-input" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="apple-form-group">
+                <label asp-for="Password"></label>
+                <input asp-for="Password" type="password" class="form-control apple-input" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="text-end mb-3">
+                <a asp-action="ForgotPassword"
+                   asp-controller="Account"
+                   class="forgot-password-link">
+                    Forgot password?
+                </a>
+            </div>
+
+            <button type="submit" class="btn apple-button w-100 mt-3">
+                Sign In
+            </button>
+
+            <div class="text-center mt-4">
+                <span class="text-muted">No account yet?</span>
+                <a asp-action="Register" asp-controller="Account" class="register-link">
+                    Register today!
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

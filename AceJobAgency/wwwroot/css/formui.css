@@ -1,0 +1,171 @@
+﻿.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.apple-form-container {
+    max-width: 420px;
+    margin: 60px auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+    .apple-form-container h1 {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .apple-form-container p.subtitle {
+        color: #6e6e73;
+        font-size: 14px;
+        margin-bottom: 28px;
+    }
+
+.apple-form-group {
+    margin-bottom: 18px;
+}
+
+.apple-form-group label {
+      font-size: 13px;
+        color: #6e6e73;
+        margin-bottom: 6px;
+    }
+       
+
+.apple-input,
+.apple-select,
+.apple-textarea {
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    border: 1px solid #d2d2d7;
+    transition: border-color 0.2s;
+}
+
+.apple-input:focus,
+.apple-select:focus,
+.apple-textarea:focus {
+    border-color: #0071e3;
+    box-shadow: none;
+       
+    }
+
+.apple-button {
+    background-color: #0071e3;
+    border: none;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.apple-button:hover {
+    background-color: #0077ed;
+}
+
+.text-danger {
+    font-size: 12px;
+}
+
+.password-rules {
+    font-size: 0.85rem;
+    margin-top: 8px;
+    color: #6e6e73;
+}
+
+    .password-rules ul {
+        padding-left: 18px;
+        margin: 6px 0;
+    }
+
+    .password-rules li {
+        margin-bottom: 4px;
+    }
+
+.apple-profile-container {
+    max-width: 700px;
+    margin: 60px auto;
+}
+
+.apple-header {
+    font-size: 36px;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+
+.apple-section {
+    margin-bottom: 30px;
+}
+
+    .apple-section h2 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .apple-section p {
+        font-size: 16px;
+        margin: 4px 0;
+    }
+
+.apple-logout-btn {
+    background: #0071e3;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+    .apple-logout-btn:hover {
+        background: #005bb5;
+    }
+
+.apple-actions {
+    margin-top: 30px;
+}
+
+.apple-btn-secondary {
+    display: inline-block;
+    padding: 10px 22px;
+    border-radius: 10px;
+    background-color: #f0f4ff;
+    color: #0a58ca;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid #cfe2ff;
+    transition: background-color 0.2s ease;
+}
+
+    .apple-btn-secondary:hover {
+        background-color: #e2eaff;
+        text-decoration: none;
+        color: #084298;
+    }
+
+.apple-logout-btn {
+    padding: 10px 22px;
+    border-radius: 10px;
+    background-color: #0a58ca;
+    color: white;
+    border: none;
+    font-weight: 600;
+}
+
+    .apple-logout-btn:hover {
+        background-color: #084298;
+    }
+
+.forgot-password-link {
+    font-size: 0.9rem;
+    color: #0071e3;
+    text-decoration: none;
+}
+
+    .forgot-password-link:hover {
+        text-decoration: underline;
+    }

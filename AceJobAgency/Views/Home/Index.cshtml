@@ -1,0 +1,97 @@
+﻿@model AceJobAgency.ViewModels.UserProfileViewModel
+
+@{
+    ViewData["Title"] = "Welcome";
+}
+
+<div class="apple-profile-container">
+
+    <h1 class="apple-header">Welcome</h1>
+
+    <!-- Personal Information -->
+    <div class="apple-section">
+        <h2 class="apple-section-title">Personal Information</h2>
+
+        <div class="apple-row">
+            <span class="apple-label">First Name</span>
+            <span class="apple-value">@Model.FirstName</span>
+        </div>
+
+        <div class="apple-row">
+            <span class="apple-label">Last Name</span>
+            <span class="apple-value">@Model.LastName</span>
+        </div>
+
+        <div class="apple-row">
+            <span class="apple-label">Gender</span>
+            <span class="apple-value">@Model.Gender</span>
+        </div>
+
+        <div class="apple-row">
+            <span class="apple-label">Date of Birth</span>
+            <span class="apple-value">
+                @Model.DateOfBirth.ToString("dd MMM yyyy")
+            </span>
+        </div>
+    </div>
+
+    <!-- Account Details -->
+    <div class="apple-section">
+        <h2 class="apple-section-title">Account Details</h2>
+
+        <div class="apple-row">
+            <span class="apple-label">Email</span>
+            <span class="apple-value">@Model.Email</span>
+        </div>
+
+        <div class="apple-row">
+            <span class="apple-label">NRIC</span>
+            <span class="apple-value">@Model.NRIC</span>
+        </div>
+    </div>
+
+    <!-- About Me -->
+    <div class="apple-section">
+        <h2 class="apple-section-title">About Me</h2>
+        <p class="apple-paragraph">@Model.WhoAmI</p>
+    </div>
+
+    <!-- Resume -->
+    <div class="apple-section">
+        <h2 class="apple-section-title">Resume</h2>
+
+        @if (!string.IsNullOrEmpty(Model.ResumeFileName))
+        {
+            <a class="apple-link"
+               href="/uploads/@Model.ResumeFileName"
+               target="_blank"
+               rel="noopener noreferrer">
+                Download Resume
+            </a>
+        }
+        else
+        {
+            <p class="text-muted">No resume uploaded.</p>
+        }
+    </div>
+
+    <div class="apple-actions">
+        <a asp-controller="Account"
+           asp-action="ChangePassword"
+           class="apple-btn-secondary">
+            Change Password
+        </a>
+
+
+    <!-- Logout -->
+    <form asp-action="Logout"
+          asp-controller="Account"
+          method="post"
+          class="apple-logout-form">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="apple-logout-btn">
+            Log Out
+        </button>
+    </form>
+
+</div>
