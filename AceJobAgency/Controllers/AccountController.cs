@@ -37,26 +37,6 @@ namespace AceJobAgency.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // pfp
-            string? profileFileName = null;
-
-            if (model.ProfileImage != null && model.ProfileImage.Length > 0)
-            {
-                var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads/profile");
-
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
-
-                profileFileName = Guid.NewGuid().ToString() +
-                                  Path.GetExtension(model.ProfileImage.FileName);
-
-                var filePath = Path.Combine(uploadsFolder, profileFileName);
-
-                using var stream = new FileStream(filePath, FileMode.Create);
-                await model.ProfileImage.CopyToAsync(stream);
-            }
-
-
             // recaptcha
             var secret = _config["GoogleReCaptcha:SecretKey"];
             var isHuman = await RecaptchaHelper.Verify(model.RecaptchaToken, secret);
@@ -77,14 +57,29 @@ namespace AceJobAgency.Controllers
             // Pw hash
             var hasher = new PasswordHasher<Member>();
             var member = new Member();
-
             member.PasswordHash = hasher.HashPassword(member, model.Password);
+
+            // --- PROFILE IMAGE: single, consistent upload & assignment ---
+            if (model.ProfileImage != null && model.ProfileImage.Length > 0)
+            {
+                var ext = Path.GetExtension(model.ProfileImage.FileName).ToLowerInvariant();
+                var fileName = Guid.NewGuid().ToString() + ext;
+
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "profile");
+                Directory.CreateDirectory(uploadsFolder);
+
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await model.ProfileImage.CopyToAsync(stream);
+
+                member.ProfileImage = fileName;
+            }
 
             // Encrypt NRIC (AES)
             var key = _config["Encryption:Key"];
-
             member.NRIC = CryptoHelper.Encrypt(model.NRIC, key);
-            member.ProfileImage = profileFileName;
+
             member.FirstName = model.FirstName;
             member.LastName = model.LastName;
             member.Gender = model.Gender;
@@ -122,7 +117,6 @@ namespace AceJobAgency.Controllers
             });
 
             await _db.SaveChangesAsync();
-
 
             return RedirectToAction("Login");
         }
@@ -221,6 +215,9 @@ namespace AceJobAgency.Controllers
             HttpContext.Session.SetString("UserEmail", member.Email);
             HttpContext.Session.SetString("ProfileImage", member.ProfileImage ?? "default.png");
 
+            var signature = $"{member.Id}:{HttpContext.Connection.RemoteIpAddress}";
+            HttpContext.Session.SetString("SessionSignature", signature);
+
 
             _db.AuditLogs.Add(new AuditLog
             {
@@ -228,59 +225,6 @@ namespace AceJobAgency.Controllers
                 Action = "Login",
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
             });
-
-            _db.SaveChanges();
-
-            return RedirectToAction("Index", "Home");
-        }
-
-
-        [HttpGet]
-        public IActionResult ChangePassword()
-        {
-            return View(new ChangePasswordViewModel());
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult ChangePassword(ChangePasswordViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            var userId = HttpContext.Session.GetInt32("UserId");
-            var member = _db.Members.FirstOrDefault(m => m.Id == userId);
-
-            if (member == null)
-                return RedirectToAction("Login");
-
-            var hasher = new PasswordHasher<Member>();
-
-            // verify current password first
-            var verify = hasher.VerifyHashedPassword(
-                member,
-                member.PasswordHash,
-                model.CurrentPassword
-            );
-
-            if (verify == PasswordVerificationResult.Failed)
-            {
-                ModelState.AddModelError("", "Current password is incorrect");
-                return View(model);
-            }
-
-            // min pw age
-            if (member.LastPasswordChangedAt != null &&
-                DateTime.Now < member.LastPasswordChangedAt.Value.AddMinutes(5))
-            {
-                ModelState.AddModelError("",
-                    "You must wait at least 5 minutes before changing your password again.");
-                return View(model);
-            }
-
-            // change pw
-            member.PasswordHash = hasher.HashPassword(member, model.NewPassword);
-            member.LastPasswordChangedAt = DateTime.Now;
 
             _db.SaveChanges();
 

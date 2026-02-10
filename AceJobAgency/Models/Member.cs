@@ -17,7 +17,7 @@ namespace AceJobAgency.Models
         [Required]
         public string Gender { get; set; } = string.Empty;
 
-        [Required] // To enc ltr
+        [Required] 
         public string NRIC { get; set; } = string.Empty; 
 
         [Required, EmailAddress]

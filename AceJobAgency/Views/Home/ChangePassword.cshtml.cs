@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace AceJobAgency.Views.Account
+namespace AceJobAgency.Views.Home
 {
     public class ChangePasswordModel : PageModel
     {

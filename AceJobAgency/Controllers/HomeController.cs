@@ -1,9 +1,10 @@
-using System.Diagnostics;
-using AceJobAgency.Models;
-using AceJobAgency.Helpers;
-using AceJobAgency.ViewModels;
 using AceJobAgency.Data;
+using AceJobAgency.Helpers;
+using AceJobAgency.Models;
+using AceJobAgency.ViewModels;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 
 namespace AceJobAgency.Controllers
 {
@@ -19,21 +20,35 @@ namespace AceJobAgency.Controllers
             _config = config;
         }
 
+
+
         public IActionResult Index()
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
 
-            if (userId == null)
+            var userId = HttpContext.Session.GetInt32("UserId");
+            var signature = HttpContext.Session.GetString("SessionSignature");
+            var member = _db.Members.FirstOrDefault(m => m.Id == userId);
+
+            if (userId == null || signature == null)
             {
+                HttpContext.Session.Clear();
                 return RedirectToAction("Login", "Account");
             }
 
-            var member = _db.Members.FirstOrDefault(m => m.Id == userId);
+            var expectedSignature =
+                $"{userId}:{HttpContext.Connection.RemoteIpAddress}";
+
+            if (signature != expectedSignature)
+            {
+                HttpContext.Session.Clear();
+                return StatusCode(404);
+            }
+            
 
             if (member == null)
             {
                 HttpContext.Session.Clear();
-                return RedirectToAction("Login", "Account");
+                return StatusCode(404);
             }
 
             var encryptionKey = _config["Encryption:Key"];
@@ -65,6 +80,64 @@ namespace AceJobAgency.Controllers
 
             return nric.Substring(0, 1) + "****" + nric[^1];
         }
+
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            if (HttpContext.Session.GetInt32("UserId") == null)
+                return RedirectToAction("Login");
+
+            return View(new ChangePasswordViewModel());
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var userId = HttpContext.Session.GetInt32("UserId");
+            var member = _db.Members.FirstOrDefault(m => m.Id == userId);
+
+            if (member == null)
+                return RedirectToAction("Login");
+
+            var hasher = new PasswordHasher<Member>();
+
+            // verify current password first
+            var verify = hasher.VerifyHashedPassword(
+                member,
+                member.PasswordHash,
+                model.CurrentPassword
+            );
+
+            if (verify == PasswordVerificationResult.Failed)
+            {
+                ModelState.AddModelError("", "Current password is incorrect");
+                return View(model);
+            }
+
+            // min pw age
+            if (member.LastPasswordChangedAt != null &&
+                DateTime.Now < member.LastPasswordChangedAt.Value.AddMinutes(5))
+            {
+                ModelState.AddModelError("",
+                    "You must wait at least 5 minutes before changing your password again.");
+                return View(model);
+            }
+
+            // change pw
+            member.PasswordHash = hasher.HashPassword(member, model.NewPassword);
+            member.LastPasswordChangedAt = DateTime.Now;
+
+            _db.SaveChanges();
+
+            return RedirectToAction("Index", "Home");
+        }
+
+
     }
 
 }

@@ -48,6 +48,18 @@ namespace AceJobAgency
             app.UseStaticFiles();
 
             app.UseRouting();
+            app.Use(async (context, next) =>
+            {
+                await next();
+
+                if (context.Response.StatusCode == StatusCodes.Status400BadRequest &&
+                    context.Request.Path.StartsWithSegments("/Account"))
+                {
+                    context.Response.Clear();
+                    context.Response.Redirect("/Error/404");
+                }
+            });
+
             app.UseStaticFiles();
 
             app.UseSession();
