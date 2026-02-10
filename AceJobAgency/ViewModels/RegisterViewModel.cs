@@ -6,6 +6,9 @@ namespace AceJobAgency.ViewModels
 {
     public class RegisterViewModel
     {
+        [Display(Name = "Profile Picture")]
+        public IFormFile? ProfileImage { get; set; }
+
         [Required]
         public string FirstName { get; set; } = "";
 

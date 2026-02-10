@@ -6,6 +6,8 @@ namespace AceJobAgency.Models
     {
         public int Id { get; set; }
 
+        public string? ProfileImage { get; set; }
+
         [Required, MaxLength(50)]
         public string FirstName { get; set; } = string.Empty;
 

@@ -100,6 +100,9 @@ namespace AceJobAgency.Migrations
                     b.Property<string>("PasswordResetToken")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("ProfileImage")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("ResumeFileName")
                         .HasColumnType("longtext");
 

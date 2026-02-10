@@ -41,6 +41,7 @@ namespace AceJobAgency.Controllers
 
             var vm = new UserProfileViewModel
             {
+                ProfileImage = member.ProfileImage,
                 FirstName = member.FirstName,
                 LastName = member.LastName,
                 Gender = member.Gender,

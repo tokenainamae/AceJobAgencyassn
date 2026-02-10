@@ -8,6 +8,17 @@
 
     <h1 class="apple-header">Welcome</h1>
 
+    @{
+        var profileFile = string.IsNullOrEmpty(Model.ProfileImage) ? "default.png" : Model.ProfileImage;
+        var profileUrl = Url.Content($"~/uploads/profile/{profileFile}");
+    }
+
+    <div class="apple-profile-pic-wrapper">
+        <img src="@profileUrl"
+             alt="Profile Picture"
+             class="apple-profile-pic" />
+    </div>
+
     <!-- Personal Information -->
     <div class="apple-section">
         <h2 class="apple-section-title">Personal Information</h2>
@@ -82,16 +93,13 @@
             Change Password
         </a>
 
-
-    <!-- Logout -->
-    <form asp-action="Logout"
-          asp-controller="Account"
-          method="post"
-          class="apple-logout-form">
-        @Html.AntiForgeryToken()
-        <button type="submit" class="apple-logout-btn">
-            Log Out
-        </button>
-    </form>
-
-</div>
+        <form asp-action="Logout"
+              asp-controller="Account"
+              method="post"
+              class="apple-logout-form">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="apple-logout-btn">
+                Log Out
+            </button>
+        </form>
+    </div>

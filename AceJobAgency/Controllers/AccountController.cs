@@ -37,6 +37,26 @@ namespace AceJobAgency.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
+            // pfp
+            string? profileFileName = null;
+
+            if (model.ProfileImage != null && model.ProfileImage.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads/profile");
+
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                profileFileName = Guid.NewGuid().ToString() +
+                                  Path.GetExtension(model.ProfileImage.FileName);
+
+                var filePath = Path.Combine(uploadsFolder, profileFileName);
+
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await model.ProfileImage.CopyToAsync(stream);
+            }
+
+
             // recaptcha
             var secret = _config["GoogleReCaptcha:SecretKey"];
             var isHuman = await RecaptchaHelper.Verify(model.RecaptchaToken, secret);
@@ -62,8 +82,9 @@ namespace AceJobAgency.Controllers
 
             // Encrypt NRIC (AES)
             var key = _config["Encryption:Key"];
-            member.NRIC = CryptoHelper.Encrypt(model.NRIC, key);
 
+            member.NRIC = CryptoHelper.Encrypt(model.NRIC, key);
+            member.ProfileImage = profileFileName;
             member.FirstName = model.FirstName;
             member.LastName = model.LastName;
             member.Gender = model.Gender;
@@ -137,7 +158,7 @@ namespace AceJobAgency.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Login(LoginViewModel model)
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(model);
@@ -198,6 +219,8 @@ namespace AceJobAgency.Controllers
             // normal login
             HttpContext.Session.SetInt32("UserId", member.Id);
             HttpContext.Session.SetString("UserEmail", member.Email);
+            HttpContext.Session.SetString("ProfileImage", member.ProfileImage ?? "default.png");
+
 
             _db.AuditLogs.Add(new AuditLog
             {
@@ -350,10 +373,5 @@ namespace AceJobAgency.Controllers
             return RedirectToAction("Login");
         }
 
-
-
-
     }
-
-
 }

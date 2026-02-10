@@ -12,6 +12,25 @@
         One Ace Job Agency account gives you access to all services.
     </p>
 
+    <div class="modal fade" id="captchaErrorModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Verification Failed</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>reCAPTCHA verification failed. Please refresh and try again.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn apple-button" data-bs-dismiss="modal">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <form asp-action="Register" method="post" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
 
@@ -83,6 +102,15 @@
             <label asp-for="ConfirmPassword"></label>
             <input asp-for="ConfirmPassword" type="password" class="form-control apple-input" />
             <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+        </div>
+
+        <div class="apple-form-group">
+            <label asp-for="ProfileImage">Profile Picture</label>
+            <input asp-for="ProfileImage"
+                   type="file"
+                   class="form-control apple-input"
+                   accept="image/*" />
+            <span asp-validation-for="ProfileImage" class="text-danger"></span>
         </div>
 
         <div class="apple-form-group">
