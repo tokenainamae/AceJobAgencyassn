@@ -310,7 +310,7 @@ namespace AceJobAgency.Controllers
         public IActionResult ResetPassword(string token)
         {
             if (string.IsNullOrEmpty(token))
-                return RedirectToAction("Login");
+                return NotFound(); 
 
             var member = _db.Members.FirstOrDefault(m =>
                 m.PasswordResetToken == token &&
