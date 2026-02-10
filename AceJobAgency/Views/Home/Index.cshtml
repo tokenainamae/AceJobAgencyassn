@@ -73,10 +73,9 @@
 
         @if (!string.IsNullOrEmpty(Model.ResumeFileName))
         {
-            <a class="apple-link"
-               href="/uploads/@Model.ResumeFileName"
-               target="_blank"
-               rel="noopener noreferrer">
+            <a asp-controller="Account"
+               asp-action="DownloadResume"
+               class="apple-link">
                 Download Resume
             </a>
         }

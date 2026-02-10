@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using AceJobAgency.Data;
+using Microsoft.AspNetCore.Antiforgery;
+using System.Linq;
 
 namespace AceJobAgency
 {
@@ -10,10 +12,15 @@ namespace AceJobAgency
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            builder.Services.AddControllersWithViews();
+   
+            builder.Services.AddControllersWithViews(options =>
+            {
+            
+                options.Filters.AddService<AntiforgeryTo404Filter>();
+            });
 
             builder.Services.AddScoped<SessionAuthFilter>();
+            builder.Services.AddScoped<AntiforgeryTo404Filter>();
 
             builder.Services.AddDbContext<AppDbContext>(options =>
             {
@@ -25,7 +32,6 @@ namespace AceJobAgency
                 );
             });
 
-            // Session timeout if noactive
             builder.Services.AddSession(options =>
             {
                 options.IdleTimeout = TimeSpan.FromMinutes(10);
@@ -35,7 +41,6 @@ namespace AceJobAgency
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
@@ -48,21 +53,45 @@ namespace AceJobAgency
             app.UseStaticFiles();
 
             app.UseRouting();
+
+            app.UseSession();
+
+
             app.Use(async (context, next) =>
             {
-                await next();
+                var sensitivePaths = new[]
+                {
+                    "/Home/ChangePassword",
+                    "/Account/ResetPassword",
+                    "/Account/ChangePassword",
+                    "/Account/ForgotPassword"
+                };
+
+                try
+                {
+                    await next();
+                }
+                catch (AntiforgeryValidationException)
+                {
+                    if (sensitivePaths.Any(sp =>
+                        context.Request.Path.StartsWithSegments(sp, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        context.Response.Clear();
+                        context.Response.Redirect("/Error/404");
+                        return;
+                    }
+                    throw;
+                }
 
                 if (context.Response.StatusCode == StatusCodes.Status400BadRequest &&
-                    context.Request.Path.StartsWithSegments("/Account"))
+                    sensitivePaths.Any(sp =>
+                        context.Request.Path.StartsWithSegments(sp, StringComparison.OrdinalIgnoreCase)))
                 {
                     context.Response.Clear();
                     context.Response.Redirect("/Error/404");
                 }
             });
 
-            app.UseStaticFiles();
-
-            app.UseSession();
             app.UseAuthentication();
             app.UseAuthorization();
 

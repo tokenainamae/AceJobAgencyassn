@@ -59,7 +59,7 @@ namespace AceJobAgency.Controllers
             var member = new Member();
             member.PasswordHash = hasher.HashPassword(member, model.Password);
 
-            // --- PROFILE IMAGE: single, consistent upload & assignment ---
+            // pfp
             if (model.ProfileImage != null && model.ProfileImage.Length > 0)
             {
                 var ext = Path.GetExtension(model.ProfileImage.FileName).ToLowerInvariant();
@@ -97,11 +97,17 @@ namespace AceJobAgency.Controllers
                     return View(model);
                 }
 
-                var fileName = Guid.NewGuid() + ext;
-                var path = Path.Combine(_env.WebRootPath, "uploads", fileName);
+                using var ms = new MemoryStream();
+                await model.Resume.CopyToAsync(ms);
 
-                using var stream = new FileStream(path, FileMode.Create);
-                await model.Resume.CopyToAsync(stream);
+                var fileEncryptionKey = _config["FileEncryption:Key"];
+                var encryptedBytes = FileCryptoHelper.Encrypt(ms.ToArray(), key);
+
+                var fileName = Guid.NewGuid() + ".enc";
+                var path = Path.Combine(_env.WebRootPath, "uploads", "encrypted", fileName);
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+                await System.IO.File.WriteAllBytesAsync(path, encryptedBytes);
 
                 member.ResumeFileName = fileName;
             }
@@ -120,6 +126,39 @@ namespace AceJobAgency.Controllers
 
             return RedirectToAction("Login");
         }
+
+        [HttpGet]
+        public IActionResult DownloadResume()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return RedirectToAction("Login");
+
+            var member = _db.Members.FirstOrDefault(m => m.Id == userId);
+            if (member == null || string.IsNullOrEmpty(member.ResumeFileName))
+                return NotFound();
+
+            var path = Path.Combine(
+                _env.WebRootPath,
+                "uploads",
+                "encrypted",
+                member.ResumeFileName
+            );
+
+            if (!System.IO.File.Exists(path))
+                return NotFound();
+
+            var encryptedBytes = System.IO.File.ReadAllBytes(path);
+            var key = _config["FileEncryption:Key"];
+
+            var decryptedBytes = FileCryptoHelper.Decrypt(encryptedBytes, key);
+
+            return File(
+                decryptedBytes,
+                "application/octet-stream",
+                "Resume.pdf"
+            );
+        }
+
 
         [HttpGet]
         public IActionResult Login()

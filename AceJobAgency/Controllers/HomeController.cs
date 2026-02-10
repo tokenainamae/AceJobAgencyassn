@@ -43,7 +43,7 @@ namespace AceJobAgency.Controllers
                 HttpContext.Session.Clear();
                 return StatusCode(404);
             }
-            
+
 
             if (member == null)
             {
@@ -106,29 +106,47 @@ namespace AceJobAgency.Controllers
 
             var hasher = new PasswordHasher<Member>();
 
-            // verify current password first
-            var verify = hasher.VerifyHashedPassword(
+            // verify current password
+            var verifyCurrent = hasher.VerifyHashedPassword(
                 member,
                 member.PasswordHash,
                 model.CurrentPassword
             );
 
-            if (verify == PasswordVerificationResult.Failed)
+            if (verifyCurrent == PasswordVerificationResult.Failed)
             {
                 ModelState.AddModelError("", "Current password is incorrect");
                 return View(model);
             }
 
-            // min pw age
-            if (member.LastPasswordChangedAt != null &&
-                DateTime.Now < member.LastPasswordChangedAt.Value.AddMinutes(5))
+            // cant use new pw 
+            var reuseCheck = hasher.VerifyHashedPassword(
+                member,
+                member.PasswordHash,
+                model.NewPassword
+            );
+
+            if (reuseCheck == PasswordVerificationResult.Success)
             {
-                ModelState.AddModelError("",
-                    "You must wait at least 5 minutes before changing your password again.");
+                ModelState.AddModelError(
+                    "NewPassword",
+                    "New password must be different from your current password."
+                );
                 return View(model);
             }
 
-            // change pw
+            // min password age
+            if (member.LastPasswordChangedAt != null &&
+                DateTime.Now < member.LastPasswordChangedAt.Value.AddMinutes(5))
+            {
+                ModelState.AddModelError(
+                    "",
+                    "You must wait at least 5 minutes before changing your password again."
+                );
+                return View(model);
+            }
+
+            // update password
             member.PasswordHash = hasher.HashPassword(member, model.NewPassword);
             member.LastPasswordChangedAt = DateTime.Now;
 
@@ -139,5 +157,4 @@ namespace AceJobAgency.Controllers
 
 
     }
-
 }
