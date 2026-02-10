@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Http;
 using AceJobAgency.Helpers;
+using Microsoft.AspNetCore.Antiforgery;
 
 namespace AceJobAgency.Controllers
 {
@@ -14,14 +15,15 @@ namespace AceJobAgency.Controllers
         private readonly IWebHostEnvironment _env;
         private readonly IConfiguration _config;
         private readonly ILogger<AccountController> _logger;
+        private readonly IAntiforgery _antiforgery;
 
-        public AccountController(AppDbContext db, IWebHostEnvironment env, IConfiguration config, ILogger<AccountController> logger)
+        public AccountController(AppDbContext db, IWebHostEnvironment env, IConfiguration config, ILogger<AccountController> logger, IAntiforgery antiforgery)
         {
             _db = db;
             _env = env;
             _config = config;
             _logger = logger;
-
+            _antiforgery = antiforgery;
         }
 
         [HttpGet]
@@ -167,32 +169,24 @@ namespace AceJobAgency.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Logout()
-        {
-            var userId = HttpContext.Session.GetInt32("UserId");
-
-            if (userId != null)
-            {
-                _db.AuditLogs.Add(new AuditLog
-                {
-                    MemberId = userId,
-                    Action = "Logout",
-                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
-                });
-
-                _db.SaveChanges();
-            }
-
-            HttpContext.Session.Clear();
-            return RedirectToAction("Login");
-        }
-
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
+            // Explicit antiforgery validation: return 404 (NotFound) on failure
+            try
+            {
+                await _antiforgery.ValidateRequestAsync(HttpContext);
+            }
+            catch (AntiforgeryValidationException)
+            {
+                // return 404 so UseStatusCodePagesWithReExecute("/Error/{0}") shows your 404 page
+                return NotFound();
+            }
+            catch (Exception)
+            {
+                // any other validation problem hide behavior as 404
+                return NotFound();
+            }
+
             if (!ModelState.IsValid)
                 return View(model);
 
@@ -303,14 +297,16 @@ namespace AceJobAgency.Controllers
                 _logger.LogInformation("Password reset link: {ResetLink}", resetLink);
             }
 
+
             return View("ForgotPasswordConfirmation");
         }
+
 
         [HttpGet]
         public IActionResult ResetPassword(string token)
         {
             if (string.IsNullOrEmpty(token))
-                return NotFound(); 
+                return RedirectToAction("Login");
 
             var member = _db.Members.FirstOrDefault(m =>
                 m.PasswordResetToken == token &&
@@ -318,7 +314,7 @@ namespace AceJobAgency.Controllers
 
             if (member == null)
             {
-                return View("ResetPasswordInvalid"); 
+                return View("ResetPasswordInvalid");
             }
 
             return View(new ResetPasswordViewModel
