@@ -318,7 +318,7 @@ namespace AceJobAgency.Controllers
 
             if (member == null)
             {
-                return View("ResetPasswordInvalid"); // optional
+                return View("ResetPasswordInvalid"); 
             }
 
             return View(new ResetPasswordViewModel
@@ -345,9 +345,52 @@ namespace AceJobAgency.Controllers
             }
 
             var hasher = new PasswordHasher<Member>();
+
+            // prevent same password reuse
+            var verifySame = hasher.VerifyHashedPassword(
+                member,
+                member.PasswordHash,
+                model.NewPassword
+            );
+
+            if (verifySame == PasswordVerificationResult.Success)
+            {
+                ModelState.AddModelError("", "New password cannot be the same as your current password.");
+                return View(model);
+            }
+
+            // prevent password history reuse
+            var history = _db.PasswordHistories
+                .Where(p => p.MemberId == member.Id)
+                .ToList();
+
+            foreach (var old in history)
+            {
+                var reused = hasher.VerifyHashedPassword(
+                    member,
+                    old.PasswordHash,
+                    model.NewPassword
+                );
+
+                if (reused == PasswordVerificationResult.Success)
+                {
+                    ModelState.AddModelError("", "You cannot reuse a previous password.");
+                    return View(model);
+                }
+            }
+
+            // Update password
             member.PasswordHash = hasher.HashPassword(member, model.NewPassword);
             member.LastPasswordChangedAt = DateTime.Now;
 
+            // Save password history
+            _db.PasswordHistories.Add(new PasswordHistory
+            {
+                MemberId = member.Id,
+                PasswordHash = member.PasswordHash
+            });
+
+            // Invalidate token
             member.PasswordResetToken = null;
             member.PasswordResetExpiry = null;
 
@@ -355,6 +398,7 @@ namespace AceJobAgency.Controllers
 
             return RedirectToAction("Login");
         }
+
 
     }
 }
