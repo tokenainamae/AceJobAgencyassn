@@ -168,25 +168,12 @@ namespace AceJobAgency.Controllers
             return View(new LoginViewModel());
         }
 
+        // NOTE: removed manual antiforgery ValidateRequestAsync and use the framework attribute instead.
+        // This avoids swallowing validation exceptions and returning a 404 which makes debugging hard.
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
-            // Explicit antiforgery validation: return 404 (NotFound) on failure
-            try
-            {
-                await _antiforgery.ValidateRequestAsync(HttpContext);
-            }
-            catch (AntiforgeryValidationException)
-            {
-                // return 404 so UseStatusCodePagesWithReExecute("/Error/{0}") shows your 404 page
-                return NotFound();
-            }
-            catch (Exception)
-            {
-                // any other validation problem hide behavior as 404
-                return NotFound();
-            }
-
             if (!ModelState.IsValid)
                 return View(model);
 
@@ -213,7 +200,7 @@ namespace AceJobAgency.Controllers
 
                 if (member.FailedLoginAttempts >= 3)
                 {
-                    member.LockoutEnd = DateTime.Now.AddMinutes(10);
+                    member.LockoutEnd = DateTime.Now.AddMinutes(1);
                 }
 
                 _db.AuditLogs.Add(new AuditLog
@@ -392,6 +379,26 @@ namespace AceJobAgency.Controllers
 
             _db.SaveChanges();
 
+            return RedirectToAction("Login");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Logout()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId != null)
+            {
+                _db.AuditLogs.Add(new AuditLog
+                {
+                    MemberId = userId.Value,
+                    Action = "Logout",
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
+                });
+                _db.SaveChanges();
+            }
+
+            HttpContext.Session.Clear();
             return RedirectToAction("Login");
         }
 
